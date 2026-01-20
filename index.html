@@ -1,209 +1,110 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Desafio Durín</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formiga Durín</title>
 
-  <style>
-    body {
-      margin: 0;
-      background: #b00000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      touch-action: none;
-    }
+<style>
+body {
+  margin: 0;
+  background: #b30000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  color: white;
+  font-family: Arial, sans-serif;
+}
 
-    #info {
-      margin-bottom: 8px;
-      font-size: 16px;
-    }
+#info {
+  margin: 10px;
+  font-size: 16px;
+}
 
-    canvas {
-      background: #b00000;
-      border: 3px solid #ffffff;
-    }
+canvas {
+  background: #b30000;
+  border: 2px solid #fff;
+}
 
-    #controls button {
-      font-size: 20px;
-      padding: 8px 14px;
-      margin: 3px;
-    }
+.controls {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 60px 60px 60px;
+  grid-template-rows: 60px 60px;
+  gap: 10px;
+}
 
-    #overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(176, 0, 0, 0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      text-align: center;
-    }
+.btn {
+  background: #ffffff;
+  color: #b30000;
+  font-size: 24px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
 
-    #overlay button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 12px;
-    }
-  </style>
+.btn:active {
+  background: #ddd;
+}
+</style>
 </head>
 
 <body>
 
-  <div id="info">
-    Pontos: <span id="score">0</span> |
-    Fase: <span id="level">1</span>
-  </div>
+<div id="info">
+Pontos: <span id="score">0</span> |
+Fase: <span id="level">1</span>
+</div>
 
-  <canvas id="game" width="360" height="360"></canvas>
+<canvas id="game" width="360" height="360"></canvas>
 
-  <div id="controls">
-    <button onclick="setDir(0,-1)">⬆️</button><br>
-    <button onclick="setDir(-1,0)">⬅️</button>
-    <button onclick="setDir(1,0)">➡️</button><br>
-    <button onclick="setDir(0,1)">⬇️</button>
-  </div>
+<div class="controls">
+  <div></div>
+  <div class="btn" onclick="move('up')">↑</div>
+  <div></div>
 
-  <div id="overlay">
-    <h1>Desafio Durín</h1>
-    <p>Controle a formiga e colete os produtos Durín</p>
-    <button onclick="startGame()">Iniciar Jogo</button>
-  </div>
+  <div class="btn" onclick="move('left')">←</div>
+  <div class="btn" onclick="move('down')">↓</div>
+  <div class="btn" onclick="move('right')">→</div>
+</div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-    const grid = 20;
-    let score = 0;
-    let level = 1;
-    let speed = 200;
-    let started = false;
+const grid = 18;
+let count = 0;
+let score = 0;
+let level = 1;
+let speed = 6;
 
-    let ant = [{ x: 180, y: 180 }];
-    let dx = grid;
-    let dy = 0;
+let ant = { x: 180, y: 180, dx: grid, dy: 0 };
+let food = spawnFood();
 
-    let item = randomPosition();
-    let bonus = null;
+function spawnFood() {
+  return {
+    x: Math.floor(Math.random() * 20) * grid,
+    y: Math.floor(Math.random() * 20) * grid
+  };
+}
 
-    function randomPosition() {
-      return {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
-    }
+function move(dir) {
+  if (dir === 'up')    { ant.dx = 0; ant.dy = -grid; }
+  if (dir === 'down')  { ant.dx = 0; ant.dy = grid; }
+  if (dir === 'left')  { ant.dx = -grid; ant.dy = 0; }
+  if (dir === 'right') { ant.dx = grid; ant.dy = 0; }
+}
 
-    function setDir(x, y) {
-      if (x !== -dx / grid && y !== -dy / grid) {
-        dx = x * grid;
-        dy = y * grid;
-      }
-    }
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") move('up');
+  if (e.key === "ArrowDown") move('down');
+  if (e.key === "ArrowLeft") move('left');
+  if (e.key === "ArrowRight") move('right');
+});
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowUp") setDir(0, -1);
-      if (e.key === "ArrowDown") setDir(0, 1);
-      if (e.key === "ArrowLeft") setDir(-1, 0);
-      if (e.key === "ArrowRight") setDir(1, 0);
-    });
-
-    function drawAnt() {
-      ant.forEach((segment, index) => {
-        ctx.fillStyle = index === 0 ? "#ffffff" : "#dddddd";
-        ctx.fillRect(segment.x, segment.y, grid, grid);
-      });
-    }
-
-    function drawItem() {
-      ctx.fillStyle = "#f5f5f5";
-      ctx.fillRect(item.x, item.y, grid, grid);
-    }
-
-    function drawBonus() {
-      if (bonus) {
-        ctx.fillStyle = "#ffcc00";
-        ctx.fillRect(bonus.x, bonus.y, grid, grid);
-        ctx.fillStyle = "#000";
-        ctx.font = "12px Arial";
-        ctx.fillText("D", bonus.x + 6, bonus.y + 14);
-      }
-    }
-
-    function update() {
-      const head = { x: ant[0].x + dx, y: ant[0].y + dy };
-
-      if (
-        head.x < 0 || head.y < 0 ||
-        head.x >= canvas.width || head.y >= canvas.height
-      ) {
-        endGame();
-        return;
-      }
-
-      ant.unshift(head);
-
-      if (head.x === item.x && head.y === item.y) {
-        score += 10;
-        item = randomPosition();
-        checkLevel();
-      } else if (bonus && head.x === bonus.x && head.y === bonus.y) {
-        score += 50;
-        bonus = null;
-        checkLevel();
-      } else {
-        ant.pop();
-      }
-    }
-
-    function checkLevel() {
-      const newLevel = Math.floor(score / 100) + 1;
-
-      if (newLevel !== level && newLevel <= 10) {
-        level = newLevel;
-        speed = Math.max(60, speed - 15);
-
-        if ([3, 6, 9].includes(level)) {
-          bonus = randomPosition();
-        }
-      }
-
-      document.getElementById("score").innerText = score;
-      document.getElementById("level").innerText = level;
-    }
-
-    function endGame() {
-      started = false;
-      document.getElementById("overlay").style.display = "flex";
-      document.getElementById("overlay").innerHTML = `
-        <h1>Parabéns!</h1>
-        <p>Sua pontuação final foi <strong>${score}</strong></p>
-        <p>Durín Indústria de Plásticos</p>
-        <button onclick="restart()">Jogar Novamente</button>
-      `;
-    }
-
-    function restart() {
-      score = 0;
-      level = 1;
-      speed = 200;
-      ant = [{ x: 180, y: 180 }];
-      dx = grid;
-      dy = 0;
-      item = randomPosition();
-      bonus = null;
-
-      document.getElementById("score").innerText = score;
-      document.getElementById("level").innerText = level;
-
-      startGame();
-    }
 function gameLoop() {
   requestAnimationFrame(gameLoop);
 
@@ -232,24 +133,22 @@ function gameLoop() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  /* TORNEIRA / ASSENTO (OBJETO) */
+  /* PRODUTO DURÍN */
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.arc(food.x + grid/2, food.y + grid/2, grid/2, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = "#b30000";
   ctx.fillRect(food.x + 4, food.y + 8, 10, 4);
 
-  /* FORMIGA DURÍN */
-  ctx.fillStyle = "#000000";
+  /* FORMIGA */
+  ctx.fillStyle = "#000";
   ctx.beginPath();
   ctx.arc(ant.x + 6, ant.y + 9, 4, 0, Math.PI * 2);
   ctx.arc(ant.x + 12, ant.y + 9, 5, 0, Math.PI * 2);
   ctx.arc(ant.x + 18, ant.y + 9, 4, 0, Math.PI * 2);
   ctx.fill();
 
-  /* ANTENAS */
   ctx.strokeStyle = "#000";
   ctx.beginPath();
   ctx.moveTo(ant.x + 10, ant.y + 4);
@@ -257,5 +156,10 @@ function gameLoop() {
   ctx.moveTo(ant.x + 14, ant.y + 4);
   ctx.lineTo(ant.x + 18, ant.y);
   ctx.stroke();
-      }
-    
+}
+
+gameLoop();
+</script>
+
+</body>
+</html> 
